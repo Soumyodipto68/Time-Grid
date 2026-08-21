@@ -1,3 +1,4 @@
+import BestMeetingTime from "../components/BestMeetingTime";
 import Header from "../components/Header";
 import LocalTimeGrid from "../components/LocalTimeGrid";
 import Sidebar from "../components/Sidebar";
@@ -14,6 +15,8 @@ export default function Home() {
         <LocalTimeGrid />
 
         <WorkingHoursTimeline />
+
+        <BestMeetingTime />
       </section>
     </main>
   );
