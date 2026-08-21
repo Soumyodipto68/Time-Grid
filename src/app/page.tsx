@@ -1,3 +1,4 @@
+import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
 export default function Home() {
@@ -6,13 +7,7 @@ export default function Home() {
       <Sidebar />
 
       <section className="flex-1 p-10">
-        <h1 className="text-3xl font-bold">
-          Good evening, Soumyodipto! 👋
-        </h1>
-
-        <p className="mt-2 text-gray-400">
-          Plan meetings effortlessly across time zones.
-        </p>
+        <Header />
       </section>
     </main>
   );
