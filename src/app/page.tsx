@@ -1,6 +1,7 @@
 import Header from "../components/Header";
 import LocalTimeGrid from "../components/LocalTimeGrid";
 import Sidebar from "../components/Sidebar";
+import WorkingHoursTimeline from "../components/WorkingHoursTimeline";
 
 export default function Home() {
   return (
@@ -11,6 +12,8 @@ export default function Home() {
         <Header />
 
         <LocalTimeGrid />
+
+        <WorkingHoursTimeline />
       </section>
     </main>
   );
