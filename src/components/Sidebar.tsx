@@ -1,5 +1,6 @@
 import { Globe, Menu } from "lucide-react";
 import MemberList from "./MemberList";
+import SidebarSettings from "./SidebarSettings";
 
 export default function Sidebar() {
   return (
@@ -29,7 +30,9 @@ export default function Sidebar() {
 
         {/* Team Members */}
         <MemberList />
-      </div>
+        {/* Sidebar Settings */}
+        <SidebarSettings />
+      </div>      
     </aside>
   );
 }
