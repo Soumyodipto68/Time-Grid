@@ -1,4 +1,5 @@
 import Header from "../components/Header";
+import LocalTimeGrid from "../components/LocalTimeGrid";
 import Sidebar from "../components/Sidebar";
 
 export default function Home() {
@@ -6,8 +7,10 @@ export default function Home() {
     <main className="flex min-h-screen bg-[#080c14] text-white">
       <Sidebar />
 
-      <section className="flex-1 p-10">
+      <section className="flex-1 overflow-y-auto p-10">
         <Header />
+
+        <LocalTimeGrid />
       </section>
     </main>
   );
