@@ -1,4 +1,4 @@
-import {fromZonedTime,formatInTimeZone,} from "date-fns-tz";
+import {formatInTimeZone,fromZonedTime,} from "date-fns-tz";
 
 export type UTCWorkingHours = {
   city: string;
@@ -14,27 +14,21 @@ export function getUTCWorkingHours(
   endHour: number,
   date: Date = new Date()
 ): UTCWorkingHours {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
-
-  const startLocal = new Date(
-    year,
-    month,
-    day,
-    startHour,
-    0,
-    0
+  const dateString = formatInTimeZone(
+    date,
+    timezone,
+    "yyyy-MM-dd"
   );
 
-  const endLocal = new Date(
-    year,
-    month,
-    day,
-    endHour,
-    0,
-    0
-  );
+  const startLocal = `${dateString} ${String(startHour).padStart(
+    2,
+    "0"
+  )}:00:00`;
+
+  const endLocal = `${dateString} ${String(endHour).padStart(
+    2,
+    "0"
+  )}:00:00`;
 
   const startUTC = fromZonedTime(
     startLocal,
