@@ -1,13 +1,35 @@
-import {CalendarClock,CheckCircle2,XCircle,} from "lucide-react";
+"use client";
+
+import { CalendarClock,CheckCircle2, XCircle,} from "lucide-react";
+import { useMemo } from "react";
 
 import { timezoneLocations } from "../data/timezones";
-import { calculateUTCOverlap } from "../lib/meeting";
+
+import {calculateUTCOverlap,findMeetingSlots,} from "../lib/meeting";
+
 import { formatUTCDate } from "../lib/timezone";
 
+import { useMeeting } from "../context/MeetingContext";
+
+import MeetingDuration from "./MeetingDuration";
+
 export default function BestMeetingTime() {
-  const overlap = calculateUTCOverlap(
-    timezoneLocations
-  );
+  const {duration,setDuration,selectedMeeting,clearMeeting,} = useMeeting();
+
+  const overlap = useMemo(() => {
+    return calculateUTCOverlap(
+      timezoneLocations
+    );
+  }, []);
+
+  const slots = useMemo(() => {
+    return findMeetingSlots(
+      overlap,
+      duration
+    );
+  }, [overlap, duration]);
+
+  const bestSlot = slots[0];
 
   return (
     <section className="mt-8 rounded-2xl border border-white/10 bg-[#111824] p-6">
@@ -24,12 +46,60 @@ export default function BestMeetingTime() {
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Based on everyone working hours.
+            Find the best time for everyone.
           </p>
         </div>
       </div>
 
-      {!overlap ? (
+      {/* Duration */}
+      <MeetingDuration
+        duration={duration}
+        onChange={setDuration}
+      />
+
+      {/* Selected meeting */}
+      {selectedMeeting && (
+        <div className="mt-6 rounded-xl border border-green-500/20 bg-green-500/10 p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2
+                size={18}
+                className="text-green-400"
+              />
+
+              <span className="text-sm font-medium text-green-400">
+                Selected Meeting
+              </span>
+            </div>
+
+            <button
+              onClick={clearMeeting}
+              className="text-xs text-gray-500 transition hover:text-white"
+            >
+              Clear
+            </button>
+          </div>
+
+          <p className="mt-3 text-3xl font-bold">
+            {formatUTCDate(
+              selectedMeeting.startUTC,
+              "Asia/Kolkata"
+            )}
+            {" – "}
+            {formatUTCDate(
+              selectedMeeting.endUTC,
+              "Asia/Kolkata"
+            )}
+          </p>
+
+          <p className="mt-2 text-sm text-gray-400">
+            {duration} minutes • Selected from timeline
+          </p>
+        </div>
+      )}
+
+      {/* No overlap */}
+      {!overlap && (
         <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/5 p-5">
           <div className="flex items-center gap-2">
             <XCircle
@@ -43,14 +113,29 @@ export default function BestMeetingTime() {
           </div>
 
           <p className="mt-2 text-sm text-gray-400">
-            There is currently no time when everyone
-            is working at the same time.
+            There is currently no time when
+            everyone is working.
           </p>
         </div>
-      ) : (
-        <div className="mt-6">
-          {/* Recommended Slot */}
-          <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-5">
+      )}
+
+      {/* No meeting slot */}
+      {overlap && !bestSlot && (
+        <div className="mt-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5">
+          <p className="font-medium text-yellow-400">
+            No {duration}-minute slot available
+          </p>
+
+          <p className="mt-2 text-sm text-gray-400">
+            Try choosing a shorter meeting duration.
+          </p>
+        </div>
+      )}
+
+      {/* Recommended slot */}
+      {bestSlot && !selectedMeeting && (
+        <>
+          <div className="mt-6 rounded-xl border border-purple-500/20 bg-purple-500/10 p-5">
             <div className="flex items-center gap-2">
               <CheckCircle2
                 size={18}
@@ -58,54 +143,63 @@ export default function BestMeetingTime() {
               />
 
               <span className="text-sm font-medium text-green-400">
-                Everyone is available
+                Recommended Slot
               </span>
             </div>
 
             <p className="mt-3 text-3xl font-bold">
               {formatUTCDate(
-                overlap.startUTC,
+                bestSlot.startUTC,
                 "Asia/Kolkata"
               )}
               {" – "}
               {formatUTCDate(
-                overlap.endUTC,
+                bestSlot.endUTC,
                 "Asia/Kolkata"
               )}
             </p>
 
             <p className="mt-2 text-sm text-gray-400">
-              {overlap.duration.toFixed(1)} hours of
-              overlapping availability
+              {duration} minutes • Everyone is available
             </p>
           </div>
 
-          {/* Member Times */}
-          <div className="mt-4 space-y-2">
-            {overlap.members.map((member) => (
-              <div
-                key={member.city}
-                className="flex items-center justify-between rounded-lg bg-[#0b101a] px-4 py-3"
-              >
-                <span className="text-sm">
-                  {member.city}
-                </span>
+          {/* Other slots */}
+          {slots.length > 1 && (
+            <div className="mt-5">
+              <p className="mb-3 text-sm font-medium text-gray-300">
+                Other available slots
+              </p>
 
-                <span className="text-sm text-gray-400">
-                  {formatUTCDate(
-                    overlap.startUTC,
-                    member.timezone
-                  )}
-                  {" – "}
-                  {formatUTCDate(
-                    overlap.endUTC,
-                    member.timezone
-                  )}
-                </span>
+              <div className="space-y-2">
+                {slots.slice(1, 5).map(
+                  (slot) => (
+                    <div
+                      key={slot.startUTC.toISOString()}
+                      className="flex items-center justify-between rounded-lg bg-[#0b101a] px-4 py-3"
+                    >
+                      <span className="text-sm text-gray-300">
+                        {formatUTCDate(
+                          slot.startUTC,
+                          "Asia/Kolkata"
+                        )}
+                        {" – "}
+                        {formatUTCDate(
+                          slot.endUTC,
+                          "Asia/Kolkata"
+                        )}
+                      </span>
+
+                      <span className="text-xs text-gray-500">
+                        {duration} min
+                      </span>
+                    </div>
+                  )
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
