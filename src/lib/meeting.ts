@@ -1,29 +1,63 @@
-export type WorkingHour = {
+import {getUTCWorkingHours,type UTCWorkingHours,} from "./timezone";
+
+type MemberForMeeting = {
   city: string;
-  start: number;
-  end: number;
+  timezone: string;
+  startHour: number;
+  endHour: number;
 };
 
-export function findOverlap(hours: WorkingHour[]) {
-  if (hours.length === 0) {
+export function calculateUTCOverlap(
+  members: MemberForMeeting[],
+  date: Date = new Date()
+) {
+  if (members.length === 0) {
     return null;
   }
 
-  const latestStart = Math.max(
-    ...hours.map((member) => member.start)
+  const workingHours: UTCWorkingHours[] =
+    members.map((member) =>
+      getUTCWorkingHours(
+        member.city,
+        member.timezone,
+        member.startHour,
+        member.endHour,
+        date
+      )
+    );
+
+  const latestStart = new Date(
+    Math.max(
+      ...workingHours.map((member) =>
+        member.startUTC.getTime()
+      )
+    )
   );
 
-  const earliestEnd = Math.min(
-    ...hours.map((member) => member.end)
+  const earliestEnd = new Date(
+    Math.min(
+      ...workingHours.map((member) =>
+        member.endUTC.getTime()
+      )
+    )
   );
 
-  if (latestStart >= earliestEnd) {
+  if (
+    latestStart.getTime() >=
+    earliestEnd.getTime()
+  ) {
     return null;
   }
+
+  const duration =
+    (earliestEnd.getTime() -
+      latestStart.getTime()) /
+    (1000 * 60 * 60);
 
   return {
-    start: latestStart,
-    end: earliestEnd,
-    duration: earliestEnd - latestStart,
+    startUTC: latestStart,
+    endUTC: earliestEnd,
+    duration,
+    members: workingHours,
   };
 }
