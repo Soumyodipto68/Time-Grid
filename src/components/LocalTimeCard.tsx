@@ -14,9 +14,14 @@ export default function LocalTimeCard({
   timezone,
   country,
 }: LocalTimeCardProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(
+    null
+  );
 
   useEffect(() => {
+    // Set the initial time only on the client
+    setCurrentTime(new Date());
+
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -24,20 +29,24 @@ export default function LocalTimeCard({
     return () => clearInterval(interval);
   }, []);
 
-  const time = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  }).format(currentTime);
+  const time = currentTime
+    ? new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }).format(currentTime)
+    : "--:--:--";
 
-  const date = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(currentTime);
+  const date = currentTime
+    ? new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }).format(currentTime)
+    : "---, --- --";
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#111824] p-5 transition hover:border-purple-500/30">
