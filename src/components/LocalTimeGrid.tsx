@@ -1,32 +1,9 @@
 import LocalTimeCard from "./LocalTimeCard";
-
-const locations = [
-  {
-    city: "Kolkata",
-    timezone: "Asia/Kolkata",
-    country: "🇮🇳",
-  },
-  {
-    city: "New York",
-    timezone: "America/New_York",
-    country: "🇺🇸",
-  },
-  {
-    city: "London",
-    timezone: "Europe/London",
-    country: "🇬🇧",
-  },
-  {
-    city: "Tokyo",
-    timezone: "Asia/Tokyo",
-    country: "🇯🇵",
-  },
-];
+import { timezoneLocations } from "../data/timezones";
 
 export default function LocalTimeGrid() {
   return (
     <section className="mt-8">
-      {/* Section Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">
@@ -44,11 +21,10 @@ export default function LocalTimeGrid() {
         </div>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {locations.map((location) => (
+        {timezoneLocations.map((location) => (
           <LocalTimeCard
-            key={location.timezone}
+            key={location.id}
             city={location.city}
             timezone={location.timezone}
             country={location.country}
