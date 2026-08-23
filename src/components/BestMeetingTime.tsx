@@ -3,7 +3,7 @@
 import { CalendarClock,CheckCircle2, XCircle,} from "lucide-react";
 import { useMemo } from "react";
 
-import { timezoneLocations } from "../data/timezones";
+import { useTeam } from "../context/TeamContext";
 
 import {calculateUTCOverlap,findMeetingSlots,} from "../lib/meeting";
 
@@ -15,12 +15,11 @@ import MeetingDuration from "./MeetingDuration";
 
 export default function BestMeetingTime() {
   const {duration,setDuration,selectedMeeting,clearMeeting,} = useMeeting();
-
+  const { members } = useTeam();
+  
   const overlap = useMemo(() => {
-    return calculateUTCOverlap(
-      timezoneLocations
-    );
-  }, []);
+  return calculateUTCOverlap(members); 
+}, [members]);  
 
   const slots = useMemo(() => {
     return findMeetingSlots(
