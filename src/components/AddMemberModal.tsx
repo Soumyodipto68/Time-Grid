@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { X, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { UserPlus, X } from "lucide-react";
 
-import { useTeam, type TeamMember } from "../context/TeamContext";
+import {
+  useTeam,
+  type TeamMember,
+} from "../context/TeamContext";
 
 type AddMemberModalProps = {
   open: boolean;
   onClose: () => void;
+  member?: TeamMember | null;
 };
 
 const timezones = [
@@ -56,22 +60,58 @@ const timezones = [
 export default function AddMemberModal({
   open,
   onClose,
+  member = null,
 }: AddMemberModalProps) {
-  const { addMember } = useTeam();
+  const {addMember,updateMember,} = useTeam();
+
+  const isEditing = Boolean(member);
 
   const [name, setName] = useState("");
 
-  const [selectedTimezone, setSelectedTimezone] =
-    useState(timezones[0]);
+  const [selectedTimezone, setSelectedTimezone] =useState(timezones[0]);
 
-  const [startHour, setStartHour] =
-    useState(10);
+  const [startHour, setStartHour] = useState(10);
 
-  const [endHour, setEndHour] =
-    useState(19);
+  const [endHour, setEndHour] = useState(19);
 
-  if (!open) {
-    return null;
+  /*
+   * Populate form when editing
+   */
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    if (member) {
+      const timezone =
+        timezones.find(
+          (item) =>
+            item.timezone ===
+            member.timezone
+        ) ?? timezones[0];
+
+      setName(member.name);
+
+      setSelectedTimezone(timezone);
+
+      setStartHour(member.startHour);
+
+      setEndHour(member.endHour);
+    } else {
+      resetForm();
+    }
+  }, [open, member]);
+
+  function resetForm() {
+    setName("");
+
+    setSelectedTimezone(
+      timezones[0]
+    );
+
+    setStartHour(10);
+
+    setEndHour(19);
   }
 
   function handleSubmit(
@@ -83,6 +123,34 @@ export default function AddMemberModal({
       return;
     }
 
+    /*
+     * EDIT
+     */
+    if (member) {
+      updateMember(member.id, {
+        name: name.trim(),
+
+        city: selectedTimezone.city,
+
+        country:
+          selectedTimezone.country,
+
+        timezone:
+          selectedTimezone.timezone,
+
+        startHour,
+
+        endHour,
+      });
+
+      onClose();
+
+      return;
+    }
+
+    /*
+     * ADD
+     */
     const newMember: TeamMember = {
       id: crypto.randomUUID(),
 
@@ -90,7 +158,8 @@ export default function AddMemberModal({
 
       city: selectedTimezone.city,
 
-      country: selectedTimezone.country,
+      country:
+        selectedTimezone.country,
 
       timezone:
         selectedTimezone.timezone,
@@ -102,18 +171,13 @@ export default function AddMemberModal({
 
     addMember(newMember);
 
-    // Reset form
-    setName("");
-
-    setSelectedTimezone(
-      timezones[0]
-    );
-
-    setStartHour(10);
-
-    setEndHour(19);
+    resetForm();
 
     onClose();
+  }
+
+  if (!open) {
+    return null;
   }
 
   return (
@@ -121,7 +185,8 @@ export default function AddMemberModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (
-          event.target === event.currentTarget
+          event.target ===
+          event.currentTarget
         ) {
           onClose();
         }
@@ -140,11 +205,15 @@ export default function AddMemberModal({
 
             <div>
               <h2 className="font-semibold">
-                Add Team Member
+                {isEditing
+                  ? "Edit Team Member"
+                  : "Add Team Member"}
               </h2>
 
               <p className="text-xs text-gray-500">
-                Add someone to your team
+                {isEditing
+                  ? "Update member details"
+                  : "Add someone to your team"}
               </p>
             </div>
           </div>
@@ -187,7 +256,9 @@ export default function AddMemberModal({
             </label>
 
             <select
-              value={selectedTimezone.timezone}
+              value={
+                selectedTimezone.timezone
+              }
               onChange={(event) => {
                 const selected =
                   timezones.find(
@@ -207,8 +278,12 @@ export default function AddMemberModal({
               {timezones.map(
                 (timezone) => (
                   <option
-                    key={timezone.timezone}
-                    value={timezone.timezone}
+                    key={
+                      timezone.timezone
+                    }
+                    value={
+                      timezone.timezone
+                    }
                     className="bg-[#111824]"
                   >
                     {timezone.country}{" "}
@@ -219,7 +294,7 @@ export default function AddMemberModal({
             </select>
           </div>
 
-          {/* Working hours */}
+          {/* Working Hours */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-300">
               Working Hours
@@ -309,7 +384,9 @@ export default function AddMemberModal({
               disabled={!name.trim()}
               className="rounded-lg bg-purple-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Add Member
+              {isEditing
+                ? "Save Changes"
+                : "Add Member"}
             </button>
           </div>
         </form>
