@@ -1,3 +1,5 @@
+"use client";
+
 import {Bookmark,Link,Settings,} from "lucide-react";
 
 export default function Header() {
