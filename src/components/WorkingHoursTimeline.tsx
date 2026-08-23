@@ -2,22 +2,21 @@
 
 import { Clock3 } from "lucide-react";
 
-import { timezoneLocations } from "../data/timezones";
 import { calculateUTCOverlap } from "../lib/meeting";
 import { useMeeting } from "../context/MeetingContext";
+import { useTeam } from "../context/TeamContext";
 
 import TimelineHeader from "./TimelineHeader";
 import TimelineRow from "./TimelineRow";
 
 export default function WorkingHoursTimeline() {
-  const { duration, selectMeeting,} = useMeeting();
+  const {duration,selectMeeting,} = useMeeting();
+
+  const { members } = useTeam();
 
   const date = new Date();
 
-  const overlap = calculateUTCOverlap(
-    timezoneLocations,
-    date
-  );
+  const overlap = calculateUTCOverlap(members,date);
 
   function handleTimelineClick(
     event: React.MouseEvent<HTMLDivElement>
@@ -26,18 +25,13 @@ export default function WorkingHoursTimeline() {
       return;
     }
 
-    const rect =
-      event.currentTarget.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
 
-    const clickPosition =
-      (event.clientX - rect.left) / rect.width;
+    const clickPosition = (event.clientX - rect.left) / rect.width;
 
-    const totalMinutes =
-      clickPosition * 24 * 60;
+    const totalMinutes = clickPosition * 24 * 60;
 
-    // Round to nearest 30 minutes
-    const roundedMinutes =
-      Math.round(totalMinutes / 30) * 30;
+    const roundedMinutes = Math.round(totalMinutes / 30) * 30;
 
     const startUTC = new Date(date);
 
@@ -53,23 +47,15 @@ export default function WorkingHoursTimeline() {
         duration * 60 * 1000
     );
 
-    // Don't allow selecting outside common availability
-    if (
-      startUTC < overlap.startUTC ||
-      endUTC > overlap.endUTC
-    ) {
+    if (startUTC < overlap.startUTC ||endUTC > overlap.endUTC) {
       return;
     }
 
-    selectMeeting(
-      startUTC,
-      endUTC
-    );
+    selectMeeting(startUTC,endUTC);
   }
 
   return (
     <section className="mt-8 rounded-2xl border border-white/10 bg-[#111824] p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -93,27 +79,23 @@ export default function WorkingHoursTimeline() {
         </div>
       </div>
 
-      {/* Timeline */}
       <div className="mt-8">
         <TimelineHeader />
 
         <div className="mt-4 space-y-3">
-          {timezoneLocations.map(
-            (location) => (
-              <TimelineRow
-                key={location.id}
-                city={location.city}
-                country={location.country}
-                timezone={location.timezone}
-                startHour={location.startHour}
-                endHour={location.endHour}
-                date={date}
-              />
-            )
-          )}
+          {members.map((member) => (
+            <TimelineRow
+              key={member.id}
+              city={member.city}
+              country={member.country}
+              timezone={member.timezone}
+              startHour={member.startHour}
+              endHour={member.endHour}
+              date={date}
+            />
+          ))}
         </div>
 
-        {/* Common availability */}
         {overlap && (
           <div className="mt-5">
             <div className="mb-2 ml-32 flex items-center gap-2 text-xs font-medium text-green-400">
