@@ -3,21 +3,14 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import {
-  useTeam,
-  type TeamMember,
-} from "../context/TeamContext";
+import { useTeam, type TeamMember,} from "../context/TeamContext";
 
 import AddMemberModal from "./AddMemberModal";
 
 export default function MemberList() {
-  const {
-    members,
-    removeMember,
-  } = useTeam();
+  const { members, removeMember,} = useTeam();
 
-  const [editingMember, setEditingMember] =
-    useState<TeamMember | null>(null);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
   return (
     <>
@@ -60,10 +53,7 @@ export default function MemberList() {
                 {/* Edit */}
                 <button
                   type="button"
-                  onClick={() =>
-                    setEditingMember(
-                      member
-                    )
+                  onClick={() =>setEditingMember(member)
                   }
                   className="rounded-lg p-2 text-gray-600 transition hover:bg-purple-500/10 hover:text-purple-400"
                   title={`Edit ${member.name}`}
@@ -74,10 +64,7 @@ export default function MemberList() {
                 {/* Delete */}
                 <button
                   type="button"
-                  onClick={() =>
-                    removeMember(
-                      member.id
-                    )
+                  onClick={() =>removeMember(member.id)
                   }
                   className="rounded-lg p-2 text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
                   title={`Remove ${member.name}`}
@@ -107,8 +94,7 @@ export default function MemberList() {
       <AddMemberModal
         open={Boolean(editingMember)}
         member={editingMember}
-        onClose={() =>
-          setEditingMember(null)
+        onClose={() => setEditingMember(null)
         }
       />
     </>
