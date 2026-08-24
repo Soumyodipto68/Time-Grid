@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode,} from "react";
+import { createContext, useContext, useState,useCallback, type ReactNode,} from "react";
 
 export type TeamMember = {
   id: string;
@@ -21,12 +21,15 @@ type TeamContextType = {
 
   updateMember: (
     id: string,
-    updates: Partial<TeamMember>
+    updatedMember: Partial<TeamMember>
+  ) => void;
+
+  setMembersFromUrl: (
+    members: TeamMember[]
   ) => void;
 };
 
-const TeamContext =
-  createContext<TeamContextType | null>(null);
+const TeamContext = createContext<TeamContextType | null>(null);
 
 const initialMembers: TeamMember[] = [
   {
@@ -81,10 +84,7 @@ export function TeamProvider({
     );
   }
 
-  function updateMember(
-    id: string,
-    updates: Partial<TeamMember>
-  ) {
+  function updateMember(id: string,updates: Partial<TeamMember>) {
     setMembers((current) =>
       current.map((member) =>
         member.id === id
@@ -96,7 +96,13 @@ export function TeamProvider({
       )
     );
   }
-
+const setMembersFromUrl =
+  useCallback(
+    (newMembers: TeamMember[]) => {
+      setMembers(newMembers);
+    },
+    []
+  );
   return (
     <TeamContext.Provider
       value={{
@@ -104,6 +110,7 @@ export function TeamProvider({
         addMember,
         removeMember,
         updateMember,
+        setMembersFromUrl,
       }}
     >
       {children}
