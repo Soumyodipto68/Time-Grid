@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String?
+  email     String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  schedules Schedule[]
+}
+
+model Schedule {
+  id        String       @id @default(cuid())
+  name      String
+
+  userId    String
+  user      User         @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  members   TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model TeamMember {
+  id         String   @id @default(cuid())
+
+  scheduleId String
+  schedule   Schedule @relation(
+    fields: [scheduleId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  name       String
+  city       String
+  country    String
+  timezone   String
+
+  startHour  Int
+  endHour    Int
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([scheduleId])
+}
