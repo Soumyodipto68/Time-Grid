@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -22,11 +21,7 @@ model Schedule {
   name      String
 
   userId    String
-  user      User         @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   members   TeamMember[]
 
@@ -40,11 +35,7 @@ model TeamMember {
   id         String   @id @default(cuid())
 
   scheduleId String
-  schedule   Schedule @relation(
-    fields: [scheduleId],
-    references: [id],
-    onDelete: Cascade
-  )
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   name       String
   city       String
