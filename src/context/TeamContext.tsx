@@ -14,21 +14,17 @@ export type TeamMember = {
 
 type TeamContextType = {
   members: TeamMember[];
-
   addMember: (member: TeamMember) => void;
-
   removeMember: (id: string) => void;
-
   updateMember: (
     id: string,
     updatedMember: Partial<TeamMember>
   ) => void;
-
   setMembersFromUrl: (
     members: TeamMember[]
   ) => void;
-
   saveSchedule: () => Promise<void>;
+  savedScheduleId: string | null;
 };
 
 const TeamContext = createContext<TeamContextType | null>(null);
@@ -68,8 +64,9 @@ export function TeamProvider({
 }: {
   children: ReactNode;
 }) {
-  const [members, setMembers] =
-    useState<TeamMember[]>(initialMembers);
+  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
+
+const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
 
   function addMember(member: TeamMember) {
     setMembers((current) => [
@@ -106,9 +103,8 @@ const setMembersFromUrl =
     []
   );
   
-  const saveSchedule = async () => {
+const saveSchedule = async () => {
   try {
-    // Get the current demo user
     const userResponse = await fetch("/api/users/demo");
 
     if (!userResponse.ok) {
@@ -117,37 +113,68 @@ const setMembersFromUrl =
 
     const user = await userResponse.json();
 
-    // Save current members
-    const response = await fetch("/api/schedules", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: "Remote Team",
-        userId: user.id,
-        members: members.map((member) => ({
-          name: member.name,
-          city: member.city,
-          country: member.country,
-          timezone: member.timezone,
-          startHour: member.startHour,
-          endHour: member.endHour,
-        })),
-      }),
-    });
+    const payload = {
+      name: "Remote Team",
+      userId: user.id,
+      members: members.map((member) => ({
+        name: member.name,
+        city: member.city,
+        country: member.country,
+        timezone: member.timezone,
+        startHour: member.startHour,
+        endHour: member.endHour,
+      })),
+    };
+
+    let response: Response;
+
+    if (savedScheduleId) {
+      // Update existing schedule
+      response = await fetch(
+        `/api/schedules/${savedScheduleId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: payload.name,
+            members: payload.members,
+          }),
+        }
+      );
+    } else {
+      // Create new schedule
+      response = await fetch("/api/schedules", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }
 
     if (!response.ok) {
       const error = await response.json();
 
-      throw new Error(error.details || error.error || "Failed to save");
+      throw new Error(
+        error.details ||
+          error.error ||
+          "Failed to save schedule"
+      );
     }
 
     const schedule = await response.json();
 
+    setSavedScheduleId(schedule.id);
+
     console.log("Schedule saved:", schedule);
 
-    alert("Schedule saved successfully! 🎉");
+    alert(
+      savedScheduleId
+        ? "Schedule updated successfully! 🎉"
+        : "Schedule saved successfully! 🎉"
+    );
   } catch (error) {
     console.error("Save schedule error:", error);
 
@@ -162,7 +189,8 @@ const setMembersFromUrl =
         removeMember,
         updateMember,
         setMembersFromUrl,
-        saveSchedule
+        saveSchedule,
+        savedScheduleId,
       }}
     >
       {children}
