@@ -7,6 +7,42 @@ type RouteContext = {
   }>;
 };
 
+export async function GET(
+  _request: Request,
+  context: RouteContext
+) {
+  try {
+    const { id } = await context.params;
+
+    const schedule = await prisma.schedule.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        members: true,
+      },
+    });
+
+    if (!schedule) {
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(schedule);
+  } catch (error) {
+    console.error("Failed to fetch schedule:", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to fetch schedule",
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: Request,
   context: RouteContext
@@ -26,11 +62,12 @@ export async function PUT(
       );
     }
 
-    const existingSchedule = await prisma.schedule.findUnique({
-      where: {
-        id,
-      },
-    });
+    const existingSchedule =
+      await prisma.schedule.findUnique({
+        where: {
+          id,
+        },
+      });
 
     if (!existingSchedule) {
       return NextResponse.json(
@@ -41,47 +78,48 @@ export async function PUT(
       );
     }
 
-    const updatedSchedule = await prisma.$transaction(async (tx) => {
-      // Remove old members
-      await tx.teamMember.deleteMany({
-        where: {
-          scheduleId: id,
-        },
-      });
-
-      // Update schedule and create new members
-      return tx.schedule.update({
-        where: {
-          id,
-        },
-
-        data: {
-          name,
-
-          members: {
-            create: members.map((member: {
-              name: string;
-              city: string;
-              country: string;
-              timezone: string;
-              startHour: number;
-              endHour: number;
-            }) => ({
-              name: member.name,
-              city: member.city,
-              country: member.country,
-              timezone: member.timezone,
-              startHour: member.startHour,
-              endHour: member.endHour,
-            })),
+    const updatedSchedule =
+      await prisma.$transaction(async (tx) => {
+        await tx.teamMember.deleteMany({
+          where: {
+            scheduleId: id,
           },
-        },
+        });
 
-        include: {
-          members: true,
-        },
+        return tx.schedule.update({
+          where: {
+            id,
+          },
+
+          data: {
+            name,
+
+            members: {
+              create: members.map(
+                (member: {
+                  name: string;
+                  city: string;
+                  country: string;
+                  timezone: string;
+                  startHour: number;
+                  endHour: number;
+                }) => ({
+                  name: member.name,
+                  city: member.city,
+                  country: member.country,
+                  timezone: member.timezone,
+                  startHour: member.startHour,
+                  endHour: member.endHour,
+                })
+              ),
+            },
+          },
+
+          include: {
+            members: true,
+          },
+        });
       });
-    });
 
     return NextResponse.json(updatedSchedule);
   } catch (error) {
