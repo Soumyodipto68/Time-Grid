@@ -149,3 +149,58 @@ export async function PUT(
     );
   }
 }
+export async function DELETE(
+  request: Request,
+  context: RouteContext
+) {
+  try {
+    const { id } = await context.params;
+    const body = await request.json();
+
+    const { userId } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "userId is required" },
+        { status: 400 }
+      );
+    }
+
+    const existingSchedule = await prisma.schedule.findUnique({
+      where: { id },
+    });
+
+    if (!existingSchedule) {
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 }
+      );
+    }
+
+    // Ownership check
+    if (existingSchedule.userId !== userId) {
+      return NextResponse.json(
+        { error: "You are not allowed to delete this schedule" },
+        { status: 403 }
+      );
+    }
+
+    await prisma.schedule.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      message: "Schedule deleted successfully",
+    });
+  } catch (error) {
+    console.error("Failed to delete schedule:", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to delete schedule",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}

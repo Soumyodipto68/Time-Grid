@@ -20,10 +20,9 @@ type TeamContextType = {
     id: string,
     updatedMember: Partial<TeamMember>
   ) => void;
-  setMembersFromUrl: (
-    members: TeamMember[]
-  ) => void;
+  setMembersFromUrl: (members: TeamMember[]) => void;
   saveSchedule: () => Promise<void>;
+  deleteSchedule: () => Promise<void>;
   savedScheduleId: string | null;
 };
 
@@ -181,6 +180,61 @@ if (savedScheduleId) {
     alert("Failed to save schedule.");
   }
 };
+const deleteSchedule = async () => {
+  if (!savedScheduleId) {
+    alert("There is no saved schedule to delete.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this schedule?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const userResponse = await fetch("/api/users/demo");
+
+    if (!userResponse.ok) {
+      throw new Error("Failed to get user");
+    }
+
+    const user = await userResponse.json();
+
+    const response = await fetch(
+      `/api/schedules/${savedScheduleId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+
+      throw new Error(
+        error.details ||
+          error.error ||
+          "Failed to delete schedule"
+      );
+    }
+
+    setSavedScheduleId(null);
+
+    alert("Schedule deleted successfully! 🗑️");
+  } catch (error) {
+    console.error("Delete schedule error:", error);
+
+    alert("Failed to delete schedule.");
+  }
+};
   return (
     <TeamContext.Provider
       value={{
@@ -191,6 +245,7 @@ if (savedScheduleId) {
         setMembersFromUrl,
         saveSchedule,
         savedScheduleId,
+        deleteSchedule,
       }}
     >
       {children}
