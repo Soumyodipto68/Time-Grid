@@ -51,17 +51,18 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const { name, members } = body;
+    const { name, members, userId } = body;
 
-    if (!name || !Array.isArray(members)) {
+    if (!name || !Array.isArray(members) || !userId) {
       return NextResponse.json(
         {
-          error: "name and members are required",
+          error: "name, members and userId are required",
         },
         { status: 400 }
       );
     }
 
+    // Find the schedule
     const existingSchedule =
       await prisma.schedule.findUnique({
         where: {
@@ -78,6 +79,17 @@ export async function PUT(
       );
     }
 
+    // 🔐 Ownership check
+    if (existingSchedule.userId !== userId) {
+      return NextResponse.json(
+        {
+          error: "You are not allowed to edit this schedule",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Update schedule
     const updatedSchedule =
       await prisma.$transaction(async (tx) => {
         await tx.teamMember.deleteMany({

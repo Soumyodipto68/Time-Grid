@@ -128,22 +128,22 @@ const saveSchedule = async () => {
 
     let response: Response;
 
-    if (savedScheduleId) {
-      // Update existing schedule
-      response = await fetch(
-        `/api/schedules/${savedScheduleId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: payload.name,
-            members: payload.members,
-          }),
-        }
-      );
-    } else {
+if (savedScheduleId) {
+  response = await fetch(
+    `/api/schedules/${savedScheduleId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: payload.name,
+        userId: user.id,
+        members: payload.members,
+      }),
+    }
+  );
+} else {
       // Create new schedule
       response = await fetch("/api/schedules", {
         method: "POST",
