@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -23,7 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const email = String(credentials.email);
+        const email = String(credentials.email).toLowerCase().trim();
+        const password = String(credentials.password);
 
         const user = await prisma.user.findUnique({
           where: {
@@ -31,13 +33,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           },
         });
 
-        if (!user) {
+        if (!user || !user.passwordHash) {
           return null;
         }
 
-        // Temporary development authentication.
-        // We will add proper password hashing during signup.
-        if (credentials.password !== "demo123") {
+        const passwordMatches = await bcrypt.compare(
+          password,
+          user.passwordHash
+        );
+
+        if (!passwordMatches) {
           return null;
         }
 
