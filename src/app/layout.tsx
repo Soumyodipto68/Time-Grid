@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import SessionProvider from "../context/SessionProvider";
 import { MeetingProvider } from "../context/MeetingContext";
 import { TeamProvider } from "../context/TeamContext";
 
@@ -10,15 +11,21 @@ export const metadata: Metadata = {
     "Schedule meetings across different time zones",
 };
 
-export default function RootLayout({children,}: Readonly<{  children: React.ReactNode;}>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
       <body>
-        <TeamProvider>
-          <MeetingProvider>
-            {children}
-          </MeetingProvider>
-        </TeamProvider>
+        <SessionProvider>
+          <TeamProvider>
+            <MeetingProvider>
+              {children}
+            </MeetingProvider>
+          </TeamProvider>
+        </SessionProvider>
       </body>
     </html>
   );
