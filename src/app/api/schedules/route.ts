@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const schedules = await prisma.schedule.findMany({
+      where: {
+        userId: session.user.id,
+      },
       include: {
         members: true,
       },
@@ -18,30 +28,40 @@ export async function GET() {
 
     return NextResponse.json(
       { error: "Failed to fetch schedules" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
 
-    const { name, userId, members } = body;
+    const { name, members } = body;
 
-    if (!name || !userId || !Array.isArray(members)) {
+    if (!name || !Array.isArray(members)) {
       return NextResponse.json(
         {
-          error: "name, userId and members are required",
+          error: "name and members are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const schedule = await prisma.schedule.create({
       data: {
         name,
-        userId,
+
+        // IMPORTANT:
+        // Never trust userId from the frontend.
+        // Get it from the authenticated session.
+        userId: session.user.id,
 
         members: {
           create: members.map((member) => ({
@@ -66,7 +86,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: "Failed to create schedule" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
