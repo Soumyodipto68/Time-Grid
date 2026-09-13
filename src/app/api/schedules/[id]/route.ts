@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/../auth";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -12,11 +13,21 @@ export async function GET(
   context: RouteContext
 ) {
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await context.params;
 
-    const schedule = await prisma.schedule.findUnique({
+    const schedule = await prisma.schedule.findFirst({
       where: {
         id,
+        userId: session.user.id,
       },
       include: {
         members: true,
@@ -35,9 +46,7 @@ export async function GET(
     console.error("Failed to fetch schedule:", error);
 
     return NextResponse.json(
-      {
-        error: "Failed to fetch schedule",
-      },
+      { error: "Failed to fetch schedule" },
       { status: 500 }
     );
   }
@@ -48,50 +57,47 @@ export async function PUT(
   context: RouteContext
 ) {
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await context.params;
+
     const body = await request.json();
 
-    const { name, members, userId } = body;
+    const { name, members } = body;
 
-    if (!name || !Array.isArray(members) || !userId) {
+    if (!name || !Array.isArray(members)) {
       return NextResponse.json(
         {
-          error: "name, members and userId are required",
+          error: "name and members are required",
         },
         { status: 400 }
       );
     }
 
-    // Find the schedule
-    const existingSchedule =
-      await prisma.schedule.findUnique({
-        where: {
-          id,
-        },
-      });
+    // Find the schedule AND verify ownership
+    const existingSchedule = await prisma.schedule.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
 
     if (!existingSchedule) {
       return NextResponse.json(
-        {
-          error: "Schedule not found",
-        },
+        { error: "Schedule not found" },
         { status: 404 }
       );
     }
 
-    // 🔐 Ownership check
-    if (existingSchedule.userId !== userId) {
-      return NextResponse.json(
-        {
-          error: "You are not allowed to edit this schedule",
-        },
-        { status: 403 }
-      );
-    }
-
-    // Update schedule
-    const updatedSchedule =
-      await prisma.$transaction(async (tx) => {
+    const updatedSchedule = await prisma.$transaction(
+      async (tx) => {
         await tx.teamMember.deleteMany({
           where: {
             scheduleId: id,
@@ -102,7 +108,6 @@ export async function PUT(
           where: {
             id,
           },
-
           data: {
             name,
 
@@ -131,7 +136,8 @@ export async function PUT(
             members: true,
           },
         });
-      });
+      }
+    );
 
     return NextResponse.json(updatedSchedule);
   } catch (error) {
@@ -149,25 +155,29 @@ export async function PUT(
     );
   }
 }
+
 export async function DELETE(
-  request: Request,
+  _request: Request,
   context: RouteContext
 ) {
   try {
-    const { id } = await context.params;
-    const body = await request.json();
+    const session = await auth();
 
-    const { userId } = body;
-
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "userId is required" },
-        { status: 400 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const existingSchedule = await prisma.schedule.findUnique({
-      where: { id },
+    const { id } = await context.params;
+
+    // Find schedule AND verify ownership
+    const existingSchedule = await prisma.schedule.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
     });
 
     if (!existingSchedule) {
@@ -177,16 +187,10 @@ export async function DELETE(
       );
     }
 
-    // Ownership check
-    if (existingSchedule.userId !== userId) {
-      return NextResponse.json(
-        { error: "You are not allowed to delete this schedule" },
-        { status: 403 }
-      );
-    }
-
     await prisma.schedule.delete({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     return NextResponse.json({
@@ -198,7 +202,10 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: "Failed to delete schedule",
-        details: error instanceof Error ? error.message : String(error),
+        details:
+          error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 500 }
     );

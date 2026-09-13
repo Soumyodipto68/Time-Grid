@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState,useCallback, type ReactNode,} from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 
 export type TeamMember = {
   id: string;
@@ -16,10 +22,7 @@ type TeamContextType = {
   members: TeamMember[];
   addMember: (member: TeamMember) => void;
   removeMember: (id: string) => void;
-  updateMember: (
-    id: string,
-    updatedMember: Partial<TeamMember>
-  ) => void;
+  updateMember: (id: string, updatedMember: Partial<TeamMember>) => void;
   setMembersFromUrl: (members: TeamMember[]) => void;
   saveSchedule: () => Promise<void>;
   deleteSchedule: () => Promise<void>;
@@ -58,31 +61,20 @@ const initialMembers: TeamMember[] = [
   },
 ];
 
-export function TeamProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function TeamProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<TeamMember[]>(initialMembers);
 
-const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
+  const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
 
   function addMember(member: TeamMember) {
-    setMembers((current) => [
-      ...current,
-      member,
-    ]);
+    setMembers((current) => [...current, member]);
   }
 
   function removeMember(id: string) {
-    setMembers((current) =>
-      current.filter(
-        (member) => member.id !== id
-      )
-    );
+    setMembers((current) => current.filter((member) => member.id !== id));
   }
 
-  function updateMember(id: string,updates: Partial<TeamMember>) {
+  function updateMember(id: string, updates: Partial<TeamMember>) {
     setMembers((current) =>
       current.map((member) =>
         member.id === id
@@ -90,151 +82,123 @@ const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
               ...member,
               ...updates,
             }
-          : member
-      )
+          : member,
+      ),
     );
   }
-const setMembersFromUrl =
-  useCallback(
-    (newMembers: TeamMember[]) => {
-      setMembers(newMembers);
-    },
-    []
-  );
-  
-const saveSchedule = async () => {
-  try {
-    const userResponse = await fetch("/api/users/demo");
 
-    if (!userResponse.ok) {
-      throw new Error("Failed to get user");
-    }
+  const setMembersFromUrl = useCallback((newMembers: TeamMember[]) => {
+    setMembers(newMembers);
+  }, []);
 
-    const user = await userResponse.json();
+  // ----------------------------------------
+  // SAVE / UPDATE SCHEDULE
+  // ----------------------------------------
 
-    const payload = {
-      name: "Remote Team",
-      userId: user.id,
-      members: members.map((member) => ({
-        name: member.name,
-        city: member.city,
-        country: member.country,
-        timezone: member.timezone,
-        startHour: member.startHour,
-        endHour: member.endHour,
-      })),
-    };
+  const saveSchedule = async () => {
+    try {
+      const payload = {
+        name: "Remote Team",
 
-    let response: Response;
+        members: members.map((member) => ({
+          name: member.name,
+          city: member.city,
+          country: member.country,
+          timezone: member.timezone,
+          startHour: member.startHour,
+          endHour: member.endHour,
+        })),
+      };
 
-if (savedScheduleId) {
-  response = await fetch(
-    `/api/schedules/${savedScheduleId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: payload.name,
-        userId: user.id,
-        members: payload.members,
-      }),
-    }
-  );
-} else {
-      // Create new schedule
-      response = await fetch("/api/schedules", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-    }
+      let response: Response;
 
-    if (!response.ok) {
-      const error = await response.json();
-
-      throw new Error(
-        error.details ||
-          error.error ||
-          "Failed to save schedule"
-      );
-    }
-
-    const schedule = await response.json();
-
-    setSavedScheduleId(schedule.id);
-
-    console.log("Schedule saved:", schedule);
-
-    alert(
-      savedScheduleId
-        ? "Schedule updated successfully! 🎉"
-        : "Schedule saved successfully! 🎉"
-    );
-  } catch (error) {
-    console.error("Save schedule error:", error);
-
-    alert("Failed to save schedule.");
-  }
-};
-const deleteSchedule = async () => {
-  if (!savedScheduleId) {
-    alert("There is no saved schedule to delete.");
-    return;
-  }
-
-  const confirmed = window.confirm(
-    "Are you sure you want to delete this schedule?"
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-    const userResponse = await fetch("/api/users/demo");
-
-    if (!userResponse.ok) {
-      throw new Error("Failed to get user");
-    }
-
-    const user = await userResponse.json();
-
-    const response = await fetch(
-      `/api/schedules/${savedScheduleId}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.id,
-        }),
+      if (savedScheduleId) {
+        // Update existing schedule
+        response = await fetch(`/api/schedules/${savedScheduleId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Create new schedule
+        response = await fetch("/api/schedules", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
       }
-    );
 
-    if (!response.ok) {
-      const error = await response.json();
+      if (!response.ok) {
+        const error = await response.json();
 
-      throw new Error(
-        error.details ||
-          error.error ||
-          "Failed to delete schedule"
+        throw new Error(
+          error.details || error.error || "Failed to save schedule",
+        );
+      }
+
+      const schedule = await response.json();
+
+      setSavedScheduleId(schedule.id);
+
+      console.log("Schedule saved:", schedule);
+
+      alert(
+        savedScheduleId
+          ? "Schedule updated successfully! 🎉"
+          : "Schedule saved successfully! 🎉",
       );
+    } catch (error) {
+      console.error("Save schedule error:", error);
+
+      alert("Failed to save schedule.");
+    }
+  };
+
+  // ----------------------------------------
+  // DELETE SCHEDULE
+  // ----------------------------------------
+
+  const deleteSchedule = async () => {
+    if (!savedScheduleId) {
+      alert("There is no saved schedule to delete.");
+      return;
     }
 
-    setSavedScheduleId(null);
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this schedule?",
+    );
 
-    alert("Schedule deleted successfully! 🗑️");
-  } catch (error) {
-    console.error("Delete schedule error:", error);
+    if (!confirmed) {
+      return;
+    }
 
-    alert("Failed to delete schedule.");
-  }
-};
+    try {
+      const response = await fetch(`/api/schedules/${savedScheduleId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+
+        throw new Error(
+          error.details || error.error || "Failed to delete schedule",
+        );
+      }
+
+      setSavedScheduleId(null);
+
+      alert("Schedule deleted successfully! 🗑️");
+    } catch (error) {
+      console.error("Delete schedule error:", error);
+
+      alert("Failed to delete schedule.");
+    }
+  };
+
   return (
     <TeamContext.Provider
       value={{
@@ -257,9 +221,7 @@ export function useTeam() {
   const context = useContext(TeamContext);
 
   if (!context) {
-    throw new Error(
-      "useTeam must be used inside TeamProvider"
-    );
+    throw new Error("useTeam must be used inside TeamProvider");
   }
 
   return context;
