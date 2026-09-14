@@ -17,27 +17,21 @@ export default function TimelineRow({
   endHour,
   date,
 }: TimelineRowProps) {
-  const { start, end } = getTimelinePosition(
-    date,
-    {
-      city,
-      timezone,
-      startHour,
-      endHour,
-    }
-  );
+  const { start, end } = getTimelinePosition(date, {
+    city,
+    timezone,
+    startHour,
+    endHour,
+  });
 
   const startPosition = (start / 24) * 100;
-
   const width = ((end - start) / 24) * 100;
 
   return (
     <div className="flex items-center gap-4">
       {/* City */}
       <div className="flex w-28 shrink-0 items-center gap-2">
-        <span className="text-lg">
-          {country}
-        </span>
+        <span className="text-lg">{country}</span>
 
         <span className="truncate text-sm font-medium">
           {city}
@@ -56,17 +50,15 @@ export default function TimelineRow({
         />
 
         {/* Hour lines */}
-        {[0, 6, 12, 18, 24].map(
-          (hour) => (
-            <div
-              key={hour}
-              className="absolute top-0 h-full border-l border-white/5"
-              style={{
-                left: `${(hour / 24) * 100}%`,
-              }}
-            />
-          )
-        )}
+        {[0, 6, 12, 18, 24].map((hour) => (
+          <div
+            key={hour}
+            className="absolute top-0 h-full border-l border-white/5"
+            style={{
+              left: `${(hour / 24) * 100}%`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );

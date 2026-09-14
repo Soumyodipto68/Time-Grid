@@ -18,15 +18,24 @@ export type TeamMember = {
   endHour: number;
 };
 
+export type TimeFormat = "12h" | "24h";
+
 type TeamContextType = {
   members: TeamMember[];
   addMember: (member: TeamMember) => void;
   removeMember: (id: string) => void;
-  updateMember: (id: string, updatedMember: Partial<TeamMember>) => void;
+  updateMember: (
+    id: string,
+    updatedMember: Partial<TeamMember>,
+  ) => void;
   setMembersFromUrl: (members: TeamMember[]) => void;
+
   saveSchedule: () => Promise<void>;
   deleteSchedule: () => Promise<void>;
   savedScheduleId: string | null;
+
+  timeFormat: TimeFormat;
+  setTimeFormat: (format: TimeFormat) => void;
 };
 
 const TeamContext = createContext<TeamContextType | null>(null);
@@ -61,20 +70,34 @@ const initialMembers: TeamMember[] = [
   },
 ];
 
-export function TeamProvider({ children }: { children: ReactNode }) {
-  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
+export function TeamProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [members, setMembers] =
+    useState<TeamMember[]>(initialMembers);
 
-  const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
+  const [savedScheduleId, setSavedScheduleId] =
+    useState<string | null>(null);
+
+  const [timeFormat, setTimeFormat] =
+    useState<TimeFormat>("12h");
 
   function addMember(member: TeamMember) {
     setMembers((current) => [...current, member]);
   }
 
   function removeMember(id: string) {
-    setMembers((current) => current.filter((member) => member.id !== id));
+    setMembers((current) =>
+      current.filter((member) => member.id !== id),
+    );
   }
 
-  function updateMember(id: string, updates: Partial<TeamMember>) {
+  function updateMember(
+    id: string,
+    updates: Partial<TeamMember>,
+  ) {
     setMembers((current) =>
       current.map((member) =>
         member.id === id
@@ -87,9 +110,12 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const setMembersFromUrl = useCallback((newMembers: TeamMember[]) => {
-    setMembers(newMembers);
-  }, []);
+  const setMembersFromUrl = useCallback(
+    (newMembers: TeamMember[]) => {
+      setMembers(newMembers);
+    },
+    [],
+  );
 
   // ----------------------------------------
   // SAVE / UPDATE SCHEDULE
@@ -113,16 +139,17 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       let response: Response;
 
       if (savedScheduleId) {
-        // Update existing schedule
-        response = await fetch(`/api/schedules/${savedScheduleId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
+        response = await fetch(
+          `/api/schedules/${savedScheduleId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
           },
-          body: JSON.stringify(payload),
-        });
+        );
       } else {
-        // Create new schedule
         response = await fetch("/api/schedules", {
           method: "POST",
           headers: {
@@ -136,7 +163,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         const error = await response.json();
 
         throw new Error(
-          error.details || error.error || "Failed to save schedule",
+          error.details ||
+            error.error ||
+            "Failed to save schedule",
         );
       }
 
@@ -177,15 +206,20 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/schedules/${savedScheduleId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/schedules/${savedScheduleId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         const error = await response.json();
 
         throw new Error(
-          error.details || error.error || "Failed to delete schedule",
+          error.details ||
+            error.error ||
+            "Failed to delete schedule",
         );
       }
 
@@ -210,6 +244,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         saveSchedule,
         savedScheduleId,
         deleteSchedule,
+        timeFormat,
+        setTimeFormat,
       }}
     >
       {children}
@@ -221,7 +257,9 @@ export function useTeam() {
   const context = useContext(TeamContext);
 
   if (!context) {
-    throw new Error("useTeam must be used inside TeamProvider");
+    throw new Error(
+      "useTeam must be used inside TeamProvider",
+    );
   }
 
   return context;

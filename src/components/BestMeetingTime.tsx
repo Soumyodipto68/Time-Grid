@@ -1,31 +1,26 @@
 "use client";
 
-import { CalendarClock,CheckCircle2, XCircle,} from "lucide-react";
+import { CalendarClock, CheckCircle2, XCircle } from "lucide-react";
 import { useMemo } from "react";
 
 import { useTeam } from "../context/TeamContext";
-
-import {calculateUTCOverlap,findMeetingSlots,} from "../lib/meeting";
-
+import { calculateUTCOverlap, findMeetingSlots } from "../lib/meeting";
 import { formatUTCDate } from "../lib/timezone";
-
 import { useMeeting } from "../context/MeetingContext";
 
 import MeetingDuration from "./MeetingDuration";
 
 export default function BestMeetingTime() {
-  const {duration,setDuration,selectedMeeting,clearMeeting,} = useMeeting();
-  const { members } = useTeam();
-  
+  const { duration, setDuration, selectedMeeting, clearMeeting } = useMeeting();
+
+  const { members, timeFormat } = useTeam();
+
   const overlap = useMemo(() => {
-  return calculateUTCOverlap(members); 
-}, [members]);  
+    return calculateUTCOverlap(members);
+  }, [members]);
 
   const slots = useMemo(() => {
-    return findMeetingSlots(
-      overlap,
-      duration
-    );
+    return findMeetingSlots(overlap, duration);
   }, [overlap, duration]);
 
   const bestSlot = slots[0];
@@ -34,15 +29,10 @@ export default function BestMeetingTime() {
     <section className="mt-8 rounded-2xl border border-white/10 bg-[#111824] p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <CalendarClock
-          size={20}
-          className="text-purple-400"
-        />
+        <CalendarClock size={20} className="text-purple-400" />
 
         <div>
-          <h2 className="text-lg font-semibold">
-            Best Meeting Time
-          </h2>
+          <h2 className="text-lg font-semibold">Best Meeting Time</h2>
 
           <p className="mt-1 text-sm text-gray-500">
             Find the best time for everyone.
@@ -51,20 +41,14 @@ export default function BestMeetingTime() {
       </div>
 
       {/* Duration */}
-      <MeetingDuration
-        duration={duration}
-        onChange={setDuration}
-      />
+      <MeetingDuration duration={duration} onChange={setDuration} />
 
       {/* Selected meeting */}
       {selectedMeeting && (
         <div className="mt-6 rounded-xl border border-green-500/20 bg-green-500/10 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle2
-                size={18}
-                className="text-green-400"
-              />
+              <CheckCircle2 size={18} className="text-green-400" />
 
               <span className="text-sm font-medium text-green-400">
                 Selected Meeting
@@ -82,13 +66,11 @@ export default function BestMeetingTime() {
           <p className="mt-3 text-3xl font-bold">
             {formatUTCDate(
               selectedMeeting.startUTC,
-              "Asia/Kolkata"
+              "Asia/Kolkata",
+              timeFormat,
             )}
             {" – "}
-            {formatUTCDate(
-              selectedMeeting.endUTC,
-              "Asia/Kolkata"
-            )}
+            {formatUTCDate(selectedMeeting.endUTC, "Asia/Kolkata", timeFormat)}
           </p>
 
           <p className="mt-2 text-sm text-gray-400">
@@ -101,10 +83,7 @@ export default function BestMeetingTime() {
       {!overlap && (
         <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/5 p-5">
           <div className="flex items-center gap-2">
-            <XCircle
-              size={18}
-              className="text-red-400"
-            />
+            <XCircle size={18} className="text-red-400" />
 
             <span className="font-medium text-red-400">
               No common working hours
@@ -112,8 +91,7 @@ export default function BestMeetingTime() {
           </div>
 
           <p className="mt-2 text-sm text-gray-400">
-            There is currently no time when
-            everyone is working.
+            There is currently no time when everyone is working.
           </p>
         </div>
       )}
@@ -136,10 +114,7 @@ export default function BestMeetingTime() {
         <>
           <div className="mt-6 rounded-xl border border-purple-500/20 bg-purple-500/10 p-5">
             <div className="flex items-center gap-2">
-              <CheckCircle2
-                size={18}
-                className="text-green-400"
-              />
+              <CheckCircle2 size={18} className="text-green-400" />
 
               <span className="text-sm font-medium text-green-400">
                 Recommended Slot
@@ -147,15 +122,9 @@ export default function BestMeetingTime() {
             </div>
 
             <p className="mt-3 text-3xl font-bold">
-              {formatUTCDate(
-                bestSlot.startUTC,
-                "Asia/Kolkata"
-              )}
+              {formatUTCDate(bestSlot.startUTC, "Asia/Kolkata", timeFormat)}
               {" – "}
-              {formatUTCDate(
-                bestSlot.endUTC,
-                "Asia/Kolkata"
-              )}
+              {formatUTCDate(bestSlot.endUTC, "Asia/Kolkata", timeFormat)}
             </p>
 
             <p className="mt-2 text-sm text-gray-400">
@@ -171,30 +140,22 @@ export default function BestMeetingTime() {
               </p>
 
               <div className="space-y-2">
-                {slots.slice(1, 5).map(
-                  (slot) => (
-                    <div
-                      key={slot.startUTC.toISOString()}
-                      className="flex items-center justify-between rounded-lg bg-[#0b101a] px-4 py-3"
-                    >
-                      <span className="text-sm text-gray-300">
-                        {formatUTCDate(
-                          slot.startUTC,
-                          "Asia/Kolkata"
-                        )}
-                        {" – "}
-                        {formatUTCDate(
-                          slot.endUTC,
-                          "Asia/Kolkata"
-                        )}
-                      </span>
+                {slots.slice(1, 5).map((slot) => (
+                  <div
+                    key={slot.startUTC.toISOString()}
+                    className="flex items-center justify-between rounded-lg bg-[#0b101a] px-4 py-3"
+                  >
+                    <span className="text-sm text-gray-300">
+                      {formatUTCDate(slot.startUTC, "Asia/Kolkata", timeFormat)}
+                      {" – "}
+                      {formatUTCDate(slot.endUTC, "Asia/Kolkata", timeFormat)}
+                    </span>
 
-                      <span className="text-xs text-gray-500">
-                        {duration} min
-                      </span>
-                    </div>
-                  )
-                )}
+                    <span className="text-xs text-gray-500">
+                      {duration} min
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

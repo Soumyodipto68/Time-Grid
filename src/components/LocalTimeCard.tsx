@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
+import { useTeam } from "../context/TeamContext";
 
 type LocalTimeCardProps = {
   city: string;
@@ -14,9 +15,9 @@ export default function LocalTimeCard({
   timezone,
   country,
 }: LocalTimeCardProps) {
-  const [currentTime, setCurrentTime] = useState<Date | null>(
-    null
-  );
+  const { timeFormat } = useTeam();
+
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
     // Set the initial time only on the client
@@ -35,7 +36,10 @@ export default function LocalTimeCard({
         hour: "numeric",
         minute: "2-digit",
         second: "2-digit",
-        hour12: true,
+        hour12: timeFormat === "12h",
+        ...(timeFormat === "24h" && {
+          hourCycle: "h23",
+        }),
       }).format(currentTime)
     : "--:--:--";
 
@@ -57,26 +61,17 @@ export default function LocalTimeCard({
             {country} {city}
           </p>
 
-          <p className="mt-1 text-xs text-gray-500">
-            {timezone}
-          </p>
+          <p className="mt-1 text-xs text-gray-500">{timezone}</p>
         </div>
 
-        <Clock
-          size={18}
-          className="text-gray-500"
-        />
+        <Clock size={18} className="text-gray-500" />
       </div>
 
       {/* Time */}
       <div className="mt-6">
-        <p className="text-3xl font-bold tracking-tight">
-          {time}
-        </p>
+        <p className="text-3xl font-bold tracking-tight">{time}</p>
 
-        <p className="mt-1 text-sm text-gray-400">
-          {date}
-        </p>
+        <p className="mt-1 text-sm text-gray-400">{date}</p>
       </div>
     </div>
   );

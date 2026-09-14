@@ -1,4 +1,7 @@
-import {formatInTimeZone,fromZonedTime,} from "date-fns-tz";
+import {
+  formatInTimeZone,
+  fromZonedTime,
+} from "date-fns-tz";
 
 export type UTCWorkingHours = {
   city: string;
@@ -50,11 +53,14 @@ export function getUTCWorkingHours(
 
 export function formatUTCDate(
   date: Date,
-  timezone: string
+  timezone: string,
+  timeFormat: "12h" | "24h" = "12h"
 ) {
   return formatInTimeZone(
     date,
     timezone,
-    "h:mm a"
+    timeFormat === "12h"
+      ? "h:mm a"
+      : "HH:mm"
   );
 }
