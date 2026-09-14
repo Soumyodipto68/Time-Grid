@@ -24,10 +24,7 @@ type TeamContextType = {
   members: TeamMember[];
   addMember: (member: TeamMember) => void;
   removeMember: (id: string) => void;
-  updateMember: (
-    id: string,
-    updatedMember: Partial<TeamMember>,
-  ) => void;
+  updateMember: (id: string, updatedMember: Partial<TeamMember>) => void;
   setMembersFromUrl: (members: TeamMember[]) => void;
 
   saveSchedule: () => Promise<void>;
@@ -36,6 +33,8 @@ type TeamContextType = {
 
   timeFormat: TimeFormat;
   setTimeFormat: (format: TimeFormat) => void;
+
+  loadSchedule: (scheduleId: string, members: TeamMember[]) => void;
 };
 
 const TeamContext = createContext<TeamContextType | null>(null);
@@ -70,34 +69,22 @@ const initialMembers: TeamMember[] = [
   },
 ];
 
-export function TeamProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [members, setMembers] =
-    useState<TeamMember[]>(initialMembers);
+export function TeamProvider({ children }: { children: ReactNode }) {
+  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
 
-  const [savedScheduleId, setSavedScheduleId] =
-    useState<string | null>(null);
+  const [savedScheduleId, setSavedScheduleId] = useState<string | null>(null);
 
-  const [timeFormat, setTimeFormat] =
-    useState<TimeFormat>("12h");
+  const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h");
 
   function addMember(member: TeamMember) {
     setMembers((current) => [...current, member]);
   }
 
   function removeMember(id: string) {
-    setMembers((current) =>
-      current.filter((member) => member.id !== id),
-    );
+    setMembers((current) => current.filter((member) => member.id !== id));
   }
 
-  function updateMember(
-    id: string,
-    updates: Partial<TeamMember>,
-  ) {
+  function updateMember(id: string, updates: Partial<TeamMember>) {
     setMembers((current) =>
       current.map((member) =>
         member.id === id
@@ -110,12 +97,9 @@ export function TeamProvider({
     );
   }
 
-  const setMembersFromUrl = useCallback(
-    (newMembers: TeamMember[]) => {
-      setMembers(newMembers);
-    },
-    [],
-  );
+  const setMembersFromUrl = useCallback((newMembers: TeamMember[]) => {
+    setMembers(newMembers);
+  }, []);
 
   // ----------------------------------------
   // SAVE / UPDATE SCHEDULE
@@ -139,16 +123,13 @@ export function TeamProvider({
       let response: Response;
 
       if (savedScheduleId) {
-        response = await fetch(
-          `/api/schedules/${savedScheduleId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+        response = await fetch(`/api/schedules/${savedScheduleId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify(payload),
+        });
       } else {
         response = await fetch("/api/schedules", {
           method: "POST",
@@ -163,9 +144,7 @@ export function TeamProvider({
         const error = await response.json();
 
         throw new Error(
-          error.details ||
-            error.error ||
-            "Failed to save schedule",
+          error.details || error.error || "Failed to save schedule",
         );
       }
 
@@ -206,20 +185,15 @@ export function TeamProvider({
     }
 
     try {
-      const response = await fetch(
-        `/api/schedules/${savedScheduleId}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response = await fetch(`/api/schedules/${savedScheduleId}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
         const error = await response.json();
 
         throw new Error(
-          error.details ||
-            error.error ||
-            "Failed to delete schedule",
+          error.details || error.error || "Failed to delete schedule",
         );
       }
 
@@ -232,7 +206,13 @@ export function TeamProvider({
       alert("Failed to delete schedule.");
     }
   };
-
+  const loadSchedule = useCallback(
+    (scheduleId: string, scheduleMembers: TeamMember[]) => {
+      setMembers(scheduleMembers);
+      setSavedScheduleId(scheduleId);
+    },
+    [],
+  );
   return (
     <TeamContext.Provider
       value={{
@@ -246,6 +226,7 @@ export function TeamProvider({
         deleteSchedule,
         timeFormat,
         setTimeFormat,
+        loadSchedule,
       }}
     >
       {children}
@@ -257,9 +238,7 @@ export function useTeam() {
   const context = useContext(TeamContext);
 
   if (!context) {
-    throw new Error(
-      "useTeam must be used inside TeamProvider",
-    );
+    throw new Error("useTeam must be used inside TeamProvider");
   }
 
   return context;
