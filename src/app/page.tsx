@@ -10,6 +10,7 @@ import WorkingHoursTimeline from "../components/WorkingHoursTimeline";
 
 import { useTeam } from "../context/TeamContext";
 import { decodeTeam } from "../lib/teamUrl";
+import MeetingDuration from "@/components/MeetingDuration";
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -46,6 +47,8 @@ export default function Home() {
         <LocalTimeGrid />
 
         <WorkingHoursTimeline />
+
+        <MeetingDuration duration={30} onChange={() => {}} />
       </section>
     </main>
   );
