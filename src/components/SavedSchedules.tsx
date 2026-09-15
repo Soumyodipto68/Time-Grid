@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bookmark, Loader2, Trash2, X } from "lucide-react";
 
-import { useTeam, type TeamMember } from "../context/TeamContext";
+import { useTeam, type TeamMember } from "@/context/TeamContext";
 
 type SavedSchedule = {
   id: string;
@@ -21,8 +21,11 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
   const { loadSchedule } = useTeam();
 
   const [schedules, setSchedules] = useState<SavedSchedule[]>([]);
+
   const [loading, setLoading] = useState(true);
+
   const [openingId, setOpeningId] = useState<string | null>(null);
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,7 +72,8 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
         endHour: member.endHour,
       }));
 
-      loadSchedule(schedule.id, members);
+      loadSchedule(schedule.id, members, data.name);
+
       onClose();
     } catch (error) {
       console.error("Failed to open schedule:", error);
@@ -83,9 +87,7 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
       "Are you sure you want to delete this schedule?",
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setDeletingId(scheduleId);
 
@@ -111,7 +113,6 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#111824] shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
@@ -130,12 +131,12 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
           <button
             onClick={onClose}
             className="rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white"
+            aria-label="Close saved schedules"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Content */}
         <div className="max-h-[65vh] overflow-y-auto p-6">
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -180,6 +181,7 @@ export default function SavedSchedules({ onClose }: SavedSchedulesProps) {
                       onClick={() => handleDelete(schedule.id)}
                       disabled={deletingId === schedule.id}
                       className="rounded-lg p-2 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={`Delete ${schedule.name}`}
                     >
                       {deletingId === schedule.id ? (
                         <Loader2 size={17} className="animate-spin" />
